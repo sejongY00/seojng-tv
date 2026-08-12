@@ -84,11 +84,16 @@ onMounted(() => {
 
 <template>
   <article
-    class="flex flex-col overflow-hidden rounded-lg border border-[var(--border)] bg-black/40"
+    class="flex min-h-0 flex-col overflow-hidden rounded-lg border border-[var(--border)] bg-black/40"
     :class="focused ? 'ring-2 ring-[var(--accent)]' : ''"
   >
-    <div class="relative aspect-video bg-black" @dblclick="emit('focus')">
-      <video ref="videoRef" class="h-full w-full object-contain" autoplay playsinline />
+    <div class="relative min-h-0 flex-1 bg-black" @dblclick="emit('focus')">
+      <video
+        ref="videoRef"
+        class="absolute inset-0 h-full w-full object-contain"
+        autoplay
+        playsinline
+      />
       <div class="pointer-events-none absolute left-2 top-2 rounded bg-black/60 px-2 py-1 text-xs">
         {{ title }} · {{ formatted }}
       </div>
@@ -119,7 +124,7 @@ onMounted(() => {
 
     <div
       v-if="focused"
-      class="flex flex-wrap items-center gap-2 border-t border-[var(--border)] bg-[var(--bg-elevated)] px-3 py-2"
+      class="flex shrink-0 flex-wrap items-center gap-2 border-t border-[var(--border)] bg-[var(--bg-elevated)] px-3 py-2"
     >
       <button
         type="button"
@@ -154,7 +159,7 @@ onMounted(() => {
       <p v-if="dvrError" class="w-full text-xs text-[var(--danger)]">{{ dvrError }}</p>
     </div>
 
-    <div class="flex items-center gap-2 border-t border-[var(--border)] bg-[var(--bg-panel)] px-3 py-2">
+    <div class="flex shrink-0 items-center gap-2 border-t border-[var(--border)] bg-[var(--bg-panel)] px-3 py-2">
       <button
         type="button"
         class="btn-ghost !px-2 !py-1 text-xs"

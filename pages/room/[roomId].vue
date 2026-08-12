@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ActiveStream, RoomState } from '~/types/room'
+import { rtcLog } from '~/utils/rtcLog'
 
 const route = useRoute()
 const config = useRuntimeConfig()
@@ -218,6 +219,10 @@ async function toggleShare() {
 }
 
 async function watchStream(stream: ActiveStream) {
+  rtcLog('watch:start local', {
+    streamId: stream.streamId,
+    broadcasterId: stream.broadcasterId,
+  })
   await unlockAudio()
   store.ensureAudioDefaults(stream.streamId)
   store.setWatching(stream.streamId, true)
@@ -230,6 +235,10 @@ async function watchStream(stream: ActiveStream) {
 }
 
 function unwatchStream(stream: ActiveStream) {
+  rtcLog('watch:stop local', {
+    streamId: stream.streamId,
+    broadcasterId: stream.broadcasterId,
+  })
   store.setWatching(stream.streamId, false)
   socket.value?.emit('watch:stop', {
     streamId: stream.streamId,
@@ -317,8 +326,8 @@ onBeforeUnmount(() => {
           @unwatch="unwatchStream"
         />
 
-        <main class="min-h-0 overflow-auto p-3">
-          <div class="mb-3 md:hidden">
+        <main class="flex min-h-0 flex-col gap-3 overflow-auto p-3 md:overflow-hidden">
+          <div class="shrink-0 md:hidden">
             <RoomParticipantList
               :participants="store.participants"
               :active-streams="store.activeStreams"
@@ -331,6 +340,7 @@ onBeforeUnmount(() => {
           </div>
 
           <RoomStreamGrid
+            class="min-h-0 flex-1"
             :streams="watchingStreams"
             :remote-streams="remoteStreams"
             :local-preview="localPreview"

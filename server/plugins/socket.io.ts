@@ -14,6 +14,7 @@ import {
   stopStreamsByClient,
   type RoomSession,
 } from '../utils/runtimeRooms'
+import { rtcLog, rtcWarn } from '../utils/rtcLog'
 
 export default defineNitroPlugin((nitroApp: NitroApp) => {
   const engine = new Engine()
@@ -23,13 +24,16 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
   })
   io.bind(engine)
   setIO(io)
+  rtcLog('socket.io plugin ready')
 
   io.on('connection', (socket) => {
     let currentRoomId: string | null = null
     let currentClientId: string | null = null
+    rtcLog('socket:connect', { socketId: socket.id })
 
     const cleanup = () => {
       if (!currentRoomId || !currentClientId) return
+      rtcLog('socket:cleanup', { roomId: currentRoomId, clientId: currentClientId })
       const room = getOrCreateRuntimeRoom(currentRoomId)
       const session = room.sessions.get(currentClientId)
       if (session && session.socketId === socket.id) {
@@ -98,12 +102,19 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
         currentRoomId = roomId
         currentClientId = clientId
         socket.join(roomId)
+        rtcLog('room:join', {
+          roomId,
+          clientId,
+          nickname: session.nickname,
+          members: room.sessions.size,
+        })
 
         ack?.({ ok: true })
         socket.emit('room:state', buildRoomState(room))
         broadcastRoomState(roomId)
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Join failed'
+        rtcWarn('room:join failed', { error: message })
         ack?.({ ok: false, error: message })
       }
     })
@@ -141,6 +152,12 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
         broadcasterNickname: session.nickname,
         startedAt: Date.now(),
       })
+      rtcLog('stream:start', {
+        roomId: currentRoomId,
+        clientId: currentClientId,
+        streamId,
+        streams: room.streams.size,
+      })
       ack?.({ ok: true })
       broadcastRoomState(currentRoomId)
     })
@@ -156,19 +173,33 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
       for (const set of room.watchMap.values()) {
         set.delete(streamId)
       }
+      rtcLog('stream:stop', { roomId: currentRoomId, clientId: currentClientId, streamId })
       broadcastRoomState(currentRoomId)
     })
 
     socket.on('watch:start', (payload) => {
       if (!currentRoomId || !currentClientId || !payload?.streamId) return
       const room = getOrCreateRuntimeRoom(currentRoomId)
-      if (!room.streams.has(payload.streamId)) return
+      if (!room.streams.has(payload.streamId)) {
+        rtcWarn('watch:start unknown stream', {
+          roomId: currentRoomId,
+          clientId: currentClientId,
+          streamId: payload.streamId,
+        })
+        return
+      }
       let set = room.watchMap.get(currentClientId)
       if (!set) {
         set = new Set()
         room.watchMap.set(currentClientId, set)
       }
       set.add(payload.streamId)
+      rtcLog('watch:start', {
+        roomId: currentRoomId,
+        viewer: currentClientId,
+        streamId: payload.streamId,
+        broadcasterId: payload.broadcasterId,
+      })
       broadcastRoomState(currentRoomId)
     })
 
@@ -176,6 +207,11 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
       if (!currentRoomId || !currentClientId || !payload?.streamId) return
       const room = getOrCreateRuntimeRoom(currentRoomId)
       room.watchMap.get(currentClientId)?.delete(payload.streamId)
+      rtcLog('watch:stop', {
+        roomId: currentRoomId,
+        viewer: currentClientId,
+        streamId: payload.streamId,
+      })
       broadcastRoomState(currentRoomId)
     })
 
@@ -184,7 +220,23 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
         if (!currentRoomId || !currentClientId || !payload?.to) return
         const room = getOrCreateRuntimeRoom(currentRoomId)
         const target = room.sessions.get(payload.to)
-        if (!target) return
+        if (!target) {
+          rtcWarn('relay: target offline', {
+            event: eventName,
+            from: currentClientId,
+            to: payload.to,
+            roomId: currentRoomId,
+          })
+          return
+        }
+        if (eventName !== 'webrtc:ice') {
+          rtcLog('relay', {
+            event: eventName,
+            from: currentClientId,
+            to: payload.to,
+            streamId: payload.streamId,
+          })
+        }
         io.to(target.socketId).emit(eventName, {
           ...payload,
           from: currentClientId,
@@ -196,6 +248,7 @@ export default defineNitroPlugin((nitroApp: NitroApp) => {
     relay('webrtc:ice')
 
     socket.on('disconnect', () => {
+      rtcLog('socket:disconnect', { socketId: socket.id, clientId: currentClientId })
       cleanup()
     })
   })

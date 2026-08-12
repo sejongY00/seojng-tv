@@ -58,15 +58,19 @@ const cards = computed(() => {
   return list
 })
 
+// Cells stretch to the available height; the video letterboxes itself with object-contain,
+// so the aspect ratio is kept without forcing the page to scroll.
+const base = 'grid h-full min-h-0 gap-3 auto-rows-[minmax(220px,1fr)]'
+
 const gridClass = computed(() => {
   if (props.layoutMode === 'focus') {
-    return 'grid grid-cols-1 gap-3 lg:grid-cols-4'
+    return `${base} grid-cols-1 lg:grid-cols-4 lg:grid-rows-3`
   }
   const n = cards.value.length
-  if (n <= 1) return 'grid grid-cols-1 gap-3'
-  if (n === 2) return 'grid grid-cols-1 gap-3 md:grid-cols-2'
-  if (n <= 4) return 'grid grid-cols-1 gap-3 md:grid-cols-2'
-  return 'grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3'
+  if (n <= 1) return `${base} grid-cols-1`
+  if (n === 2) return `${base} grid-cols-1 md:grid-cols-2`
+  if (n <= 4) return `${base} grid-cols-1 md:grid-cols-2`
+  return `${base} grid-cols-1 md:grid-cols-2 xl:grid-cols-3`
 })
 </script>
 
@@ -75,7 +79,7 @@ const gridClass = computed(() => {
     <RoomVideoPlayerCard
       v-for="(card, index) in cards"
       :key="card.streamId"
-      :class="layoutMode === 'focus' && index === 0 ? 'lg:col-span-3 lg:row-span-2' : ''"
+      :class="layoutMode === 'focus' && index === 0 ? 'lg:col-span-3 lg:row-span-3' : ''"
       :stream-id="card.streamId"
       :title="card.isLocal ? `${card.title} (미리보기)` : card.title"
       :media-stream="card.mediaStream"
@@ -91,7 +95,7 @@ const gridClass = computed(() => {
     />
     <div
       v-if="!cards.length"
-      class="flex min-h-[240px] items-center justify-center rounded-lg border border-dashed border-[var(--border)] text-sm text-[var(--text-muted)]"
+      class="flex items-center justify-center rounded-lg border border-dashed border-[var(--border)] text-sm text-[var(--text-muted)]"
     >
       시청할 화면을 왼쪽에서 선택하세요.
     </div>
