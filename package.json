@@ -1,0 +1,36 @@
+{
+  "name": "sejong-tv",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "nuxt dev",
+    "build": "nuxt build",
+    "preview": "nuxt preview",
+    "postinstall": "prisma generate && nuxt prepare",
+    "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
+    "db:push": "prisma db push"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.9.0",
+    "@vueuse/core": "^13.3.0",
+    "@vueuse/nuxt": "^13.3.0",
+    "bcryptjs": "^3.0.2",
+    "jose": "^6.0.11",
+    "nanoid": "^5.1.5",
+    "nuxt": "^3.17.5",
+    "pinia": "^3.0.3",
+    "@pinia/nuxt": "^0.11.1",
+    "prisma": "^6.9.0",
+    "socket.io": "^4.8.1",
+    "socket.io-client": "^4.8.1",
+    "engine.io": "^6.6.4",
+    "vue": "^3.5.16",
+    "vue-router": "^4.5.1"
+  },
+  "devDependencies": {
+    "@nuxtjs/tailwindcss": "^6.14.0",
+    "@types/bcryptjs": "^2.4.6",
+    "typescript": "^5.8.3"
+  }
+}

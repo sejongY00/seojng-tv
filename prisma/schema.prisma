@@ -1,0 +1,17 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Room {
+  id           String   @id
+  name         String
+  passwordHash String
+  pwdVersion   Int      @default(1)
+  createdAt    DateTime @default(now())
+  createdBy    String   @default("admin")
+}
