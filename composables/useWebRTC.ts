@@ -68,6 +68,11 @@ export function useWebRTC(options: {
 
   async function createOfferAsViewer(broadcasterId: string, streamId: string) {
     const pc = getPc(broadcasterId, streamId)
+    // Without recvonly transceivers the offer carries no m-lines and no media can flow back.
+    if (pc.getTransceivers().length === 0) {
+      pc.addTransceiver('video', { direction: 'recvonly' })
+      pc.addTransceiver('audio', { direction: 'recvonly' })
+    }
     const offer = await pc.createOffer()
     await pc.setLocalDescription(offer)
     options.socket.value?.emit('webrtc:offer', {
@@ -79,6 +84,8 @@ export function useWebRTC(options: {
 
   async function handleOffer(from: string, streamId: string, sdp: RTCSessionDescriptionInit) {
     const pc = getPc(from, streamId)
+    // Set the remote offer first so addTrack reuses the viewer's recvonly transceivers.
+    await pc.setRemoteDescription(sdp)
     const local = options.getLocalStream()
     if (local) {
       for (const track of local.getTracks()) {
@@ -86,7 +93,6 @@ export function useWebRTC(options: {
         if (!exists) pc.addTrack(track, local)
       }
     }
-    await pc.setRemoteDescription(sdp)
     const answer = await pc.createAnswer()
     await pc.setLocalDescription(answer)
     options.socket.value?.emit('webrtc:answer', {

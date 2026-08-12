@@ -83,7 +83,7 @@ const gridClass = computed(() => {
       :viewer-names="viewerNamesByStream[card.streamId] || []"
       :volume="volumeMap[card.streamId] ?? 1"
       :muted="mutedMap[card.streamId] ?? false"
-      :focused="focusStreamId === card.streamId"
+      :focused="layoutMode === 'focus' ? index === 0 : focusStreamId === card.streamId"
       @update:volume="emit('update:volume', card.streamId, $event)"
       @update:muted="emit('update:muted', card.streamId, $event)"
       @stop="emit('stop', card.streamId)"
